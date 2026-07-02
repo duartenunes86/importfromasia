@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: importfromasia
+    runtime: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: ELIMAPI_BASE_URL
+        value: https://openapi.elim.asia
+      # Set these two as secrets in the Render dashboard (do NOT commit them):
+      - key: ELIMAPI_EMAIL
+        sync: false
+      - key: ELIMAPI_PASSWORD
+        sync: false

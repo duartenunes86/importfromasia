@@ -1,0 +1,14 @@
+{
+  "name": "importfromasia",
+  "version": "1.0.0",
+  "description": "Alibaba-style marketplace for importing from Asia",
+  "scripts": {
+    "install:all": "cd backend && npm install",
+    "start": "cd backend && node server.js",
+    "dev": "cd backend && npm run dev"
+  },
+  "dependencies": {
+    "playwright": "^1.60.0",
+    "ws": "^8.20.0"
+  }
+}

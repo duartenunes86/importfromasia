@@ -1,0 +1,21 @@
+node_modules/
+.env
+*.log
+.DS_Store
+
+# Stray local dirs
+home/
+
+# Scraping / account-registration / captcha tooling — NOT part of the deployed
+# app, and several contain hardcoded credentials. Kept locally, never committed.
+backend/chaojiying_reg.js
+backend/diagnose_captcha.js
+backend/login1688.js
+backend/login1688_openclaw.js
+backend/proxy_relay.py
+backend/register2captcha.js
+backend/register2captcha_openclaw.js
+backend/register_taobao.js
+backend/register_taobao_uk.js
+backend/solve_turnstile.js
+backend/services/scraper1688.js
