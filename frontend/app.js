@@ -28,13 +28,8 @@ const EU_COUNTRIES = new Set([
 ]);
 
 async function detectCurrency() {
-  try {
-    const r = await fetch('http://ip-api.com/json/?fields=countryCode', { timeout: 5000 });
-    const { countryCode } = await r.json();
-    if (countryCode === 'GB')              return { currency: 'GBP', symbol: '£' };
-    if (EU_COUNTRIES.has(countryCode))     return { currency: 'EUR', symbol: '€' };
-  } catch { /* ignore */ }
-  return { currency: 'USD', symbol: '$' };
+  // Prices are shown in British pounds (GBP) for all visitors.
+  return { currency: 'GBP', symbol: '£' };
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
