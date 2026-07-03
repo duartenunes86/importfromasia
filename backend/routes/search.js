@@ -61,11 +61,16 @@ async function buildPool(query) {
     )
   );
 
+  // Minimum realistic wholesale price in CNY. 1688 sellers list "contact for
+  // price / custom quote" items at a nominal ¥0.01, which (a) aren't real prices
+  // and (b) dominate the top of a lowest-price sort and render as £0.00/$0.00.
+  const MIN_PRICE_CNY = 1;
+
   const seen   = new Set();
   const merged = [];
   for (const pg of pages) {
     for (const item of pg.products) {
-      if (item.priceCny > 0 && !seen.has(item.id)) {
+      if (item.priceCny >= MIN_PRICE_CNY && !seen.has(item.id)) {
         seen.add(item.id);
         merged.push(item);
       }
