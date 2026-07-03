@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Alibaba/1688 CDN (alicdn.com) blocks image requests that carry our domain as
+       the Referer (403). Sending no referer makes the CDN serve them (200). -->
+  <meta name="referrer" content="no-referrer" />
   <title>ImportFromAsia — Source Products from China</title>
   <link rel="stylesheet" href="style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
