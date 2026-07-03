@@ -90,14 +90,18 @@ async function convertFromCny(cnyAmount, targetCurrency) {
   const spreadAmount = baseAmount * SPREAD;
   const finalAmount  = baseAmount + spreadAmount;
 
+  // Very cheap items (< 0.01) would round to 0.00 with 2 decimals, so show
+  // 3 decimals for them (e.g. £0.004) — otherwise use the normal 2 decimals.
+  const decimals = finalAmount > 0 && finalAmount < 0.01 ? 3 : 2;
+
   return {
-    amount:     parseFloat(finalAmount.toFixed(2)),
-    baseAmount: parseFloat(baseAmount.toFixed(2)),   // price without markup (for transparency)
-    spread:     parseFloat(spreadAmount.toFixed(2)), // the markup amount
-    formatted:  `${symbol}${finalAmount.toFixed(2)}`,
+    amount:     parseFloat(finalAmount.toFixed(decimals)),
+    baseAmount: parseFloat(baseAmount.toFixed(decimals)), // price without markup (for transparency)
+    spread:     parseFloat(spreadAmount.toFixed(2)),      // the markup amount
+    formatted:  `${symbol}${finalAmount.toFixed(decimals)}`,
     currency:   targetCurrency,
     symbol,
-    rate,                                            // real mid-market rate, untouched
+    rate,                                                 // real mid-market rate, untouched
   };
 }
 
