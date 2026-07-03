@@ -94,8 +94,11 @@
       <button class="btn btn-ghost btn-sm" id="clearFiltersBtn">Clear</button>
 
       <div class="results-controls">
-        <span class="sort-label">Sorted by</span>
-        <span class="sort-static">Lowest price ↑</span>
+        <label class="sort-label" for="sortSelect">Sort by</label>
+        <select id="sortSelect" class="sort-select">
+          <option value="default">Relevance</option>
+          <option value="price-asc">Price: Low → High</option>
+        </select>
       </div>
     </div>
 

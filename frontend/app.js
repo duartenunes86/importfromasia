@@ -13,6 +13,8 @@ let currentTotal    = 0;
 let currentProducts = [];
 let currentCurrency = null;   // null until geo-detected
 let currentSymbol   = '$';
+let sortMode        = 'default';
+let currentPageSize = 50;
 let filterPriceMin  = null;
 let filterPriceMax  = null;
 
@@ -82,6 +84,12 @@ function bindEvents() {
     chip.addEventListener('click', () => triggerSearch(chip.dataset.query, 1))
   );
 
+  // Sort — relevance (single batch) vs price low→high (pooled + sorted)
+  document.getElementById('sortSelect').addEventListener('change', e => {
+    sortMode = e.target.value;
+    if (currentQuery) triggerSearch(currentQuery, 1);
+  });
+
   // Price filters
   document.getElementById('applyFiltersBtn').addEventListener('click', () => {
     filterPriceMin = parseFloat(document.getElementById('priceMin').value) || null;
@@ -139,7 +147,7 @@ async function runSearch(query, page) {
   const params = new URLSearchParams({
     q:        query,
     page,
-    pageSize: 20,
+    sort:     sortMode,
   });
   if (currentCurrency)       params.set('currency', currentCurrency);
   if (filterPriceMin != null) params.set('priceMin', filterPriceMin);
@@ -153,9 +161,10 @@ async function runSearch(query, page) {
     }
     const data = await resp.json();
 
-    // Backend returns the pool already sorted lowest-price-first
+    // Backend returns results already ordered for the chosen sort mode
     currentProducts = data.products || [];
     currentTotal    = data.total    || 0;
+    currentPageSize = data.pageSize || currentPageSize;
     currentCurrency = data.currency || currentCurrency;
     currentSymbol   = data.symbol   || currentSymbol;
 
@@ -249,7 +258,7 @@ function buildCard(product, idx, saved) {
 // Pagination
 // -----------------------------------------------------------------------
 function renderPagination(total, cur) {
-  const pages     = Math.ceil(total / 20);
+  const pages     = Math.ceil(total / currentPageSize);
   const el        = document.getElementById('pagination');
   if (pages <= 1) { el.style.display = 'none'; return; }
   el.style.display = 'flex';

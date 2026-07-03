@@ -45,9 +45,9 @@ function resolveCurrency(req) {
 // GET /api/search
 // ---------------------------------------------------------------------------
 
-const FETCH_PAGES  = 15;  // pages to pull from the API on every query
+const FETCH_PAGES  = 15;  // batches pulled for the price-sorted pool
 const FETCH_SIZE   = 50;  // items per API call (API hard limit — 100 returns nothing)
-const PAGE_SIZE    = 20;  // items shown per page to the user
+const PAGE_SIZE    = 50;  // items shown per page to the user (one API batch)
 
 /**
  * Build a pool of products for a query: pull FETCH_PAGES pages from the Elim API
@@ -79,36 +79,46 @@ async function buildPool(query) {
 router.get('/search', async (req, res) => {
   const query = (req.query.q || '').trim();
   const page  = Math.max(1, parseInt(req.query.page) || 1);
+  const sort  = req.query.sort === 'price-asc' ? 'price-asc' : 'default';
 
   if (!query) return res.status(400).json({ error: 'Query parameter "q" is required.' });
 
   try {
     const { currency, symbol } = await resolveCurrency(req);
 
-    // Build (or reuse) the lowest-price-sorted pool for this query
-    const cacheKey = `pool:${query.toLowerCase()}`;
-    let pool = poolCache.get(cacheKey);
-    if (!pool) {
-      pool = await buildPool(query);
-      poolCache.set(cacheKey, pool);
-    }
-
     // Optional price filter — inputs arrive in the display currency, so reverse
     // them back into CNY (undo the exchange rate + 15% markup) before filtering.
     const priceMin = parseFloat(req.query.priceMin) || undefined;
     const priceMax = parseFloat(req.query.priceMax) || undefined;
-    let filtered = pool;
+    let minCny = -Infinity, maxCny = Infinity;
     if (priceMin != null || priceMax != null) {
       const rates = await getExchangeRates();
       const eff   = rates[currency] * (1 + CURRENCY_SPREAD);  // display = cny × eff
-      const minCny = priceMin != null ? priceMin / eff : -Infinity;
-      const maxCny = priceMax != null ? priceMax / eff :  Infinity;
-      filtered = pool.filter(p => p.priceCny >= minCny && p.priceCny <= maxCny);
+      if (priceMin != null) minCny = priceMin / eff;
+      if (priceMax != null) maxCny = priceMax / eff;
     }
+    const inRange = p => p.priceCny >= minCny && p.priceCny <= maxCny;
 
-    const total = filtered.length;
-    const start = (page - 1) * PAGE_SIZE;
-    const slice = filtered.slice(start, start + PAGE_SIZE);
+    let slice, total;
+
+    if (sort === 'price-asc') {
+      // ── Lowest price: pool 15 batches of 50, sort ascending, paginate ──
+      const cacheKey = `pool:${query.toLowerCase()}`;
+      let pool = poolCache.get(cacheKey);
+      if (!pool) {
+        pool = await buildPool(query);
+        poolCache.set(cacheKey, pool);
+      }
+      const filtered = pool.filter(inRange);
+      total = filtered.length;
+      const start = (page - 1) * PAGE_SIZE;
+      slice = filtered.slice(start, start + PAGE_SIZE);
+    } else {
+      // ── Relevance (default): one API batch of 50 in the API's own order ──
+      const result = await searchProducts(query, page, PAGE_SIZE);
+      total = result.total;
+      slice = result.products.filter(p => p.priceCny > 0 && inRange(p));
+    }
 
     // Translate + convert only the visible slice (keeps the pool cheap)
     const titles = await translateBatch(slice.map(p => p.title));
