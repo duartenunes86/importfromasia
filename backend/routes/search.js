@@ -2,6 +2,8 @@
  * Search routes
  *
  * GET /api/search?q=keyword&page=1&pageSize=20&sort=default&priceMin=&priceMax=
+ *     (q=img:<imageId> searches by an uploaded photo instead of a keyword)
+ * POST /api/image-upload   (raw image body) → { imageId }
  * GET /api/product/:id
  * GET /api/rates
  */
@@ -9,7 +11,7 @@
 const express    = require('express');
 const router     = express.Router();
 
-const { searchProducts, getProductDetail } = require('../services/search1688');
+const { searchProducts, searchByImage, uploadImage, getProductDetail } = require('../services/search1688');
 const { translateBatch, translateToChinese } = require('../services/translator');
 const { getCurrencyForIp, convertFromCny, getExchangeRates } = require('../services/currency');
 
@@ -67,8 +69,10 @@ router.get('/search', async (req, res) => {
     const inRange = p => p.priceCny >= minCny && p.priceCny <= maxCny;
 
     // One API batch of 50 per page; for price-asc the Elim API sorts server-side
-    const zhQuery = await translateToChinese(query);
-    const result  = await searchProducts(zhQuery, page, PAGE_SIZE, { sort });
+    const imageId = query.match(/^img:(\d+)$/)?.[1];
+    const result  = imageId
+      ? await searchByImage(imageId, page, PAGE_SIZE, { sort })
+      : await searchProducts(await translateToChinese(query), page, PAGE_SIZE, { sort });
     const total  = result.total;
     const slice  = result.products.filter(p => p.priceCny > 0 && inRange(p));
 
@@ -96,6 +100,28 @@ router.get('/search', async (req, res) => {
     console.error('[/api/search]', err.message);
     res.status(502).json({
       error:  'Failed to fetch results. Please try again.',
+      detail: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/image-upload — body is the raw photo (Content-Type: image/*)
+// ---------------------------------------------------------------------------
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp']);
+
+router.post('/image-upload', express.raw({ type: 'image/*', limit: '10mb' }), async (req, res) => {
+  const type = req.headers['content-type'];
+  if (!IMAGE_TYPES.has(type) || !req.body?.length) {
+    return res.status(400).json({ error: 'Please upload a JPEG, PNG or WebP photo.' });
+  }
+
+  try {
+    res.json({ imageId: await uploadImage(req.body, type) });
+  } catch (err) {
+    console.error('[/api/image-upload]', err.message);
+    res.status(502).json({
+      error:  'Could not upload the photo. Please try again.',
       detail: process.env.NODE_ENV === 'development' ? err.message : undefined,
     });
   }

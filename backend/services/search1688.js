@@ -92,6 +92,64 @@ async function searchProducts(keyword, page = 1, pageSize = 20, filters = {}) {
 }
 
 /**
+ * Upload a photo to Elim for image search.
+ *
+ * @param {Buffer} buffer    - JPEG, PNG or WebP bytes (max 10 MiB)
+ * @param {string} mimeType
+ * @returns {Promise<string>} image id to pass to searchByImage
+ */
+async function uploadImage(buffer, mimeType) {
+  await getToken();
+
+  const form = new FormData();
+  form.append('file', new Blob([buffer], { type: mimeType }), 'photo');
+  form.append('platform', '1688');
+
+  const { data } = await axios.post(`${BASE_URL}/v1/products/upload-image`, form, {
+    headers: { Authorization: `Bearer ${_token}` },
+    timeout: 30000,
+  });
+
+  const imageId = data?.data?.image_id;
+  if (!imageId) throw new Error('Image upload returned no image_id');
+  return String(imageId);
+}
+
+/**
+ * Search products that look like an uploaded photo.
+ *
+ * @param {string} imageId   - from uploadImage
+ * @param {number} page
+ * @param {number} pageSize
+ * @param {object} filters   - { sort }
+ * @returns {Promise<{products: Array, total: number}>}
+ */
+async function searchByImage(imageId, page = 1, pageSize = 20, filters = {}) {
+  await getToken();
+
+  const body = {
+    img_id:   imageId,
+    img_url:  '',
+    platform: 'alibaba',
+    page,
+    size:     pageSize,
+    lang:     'en',
+  };
+
+  if (SORT_MAP[filters.sort]) body.sort = SORT_MAP[filters.sort];
+
+  const { data } = await axios.post(`${BASE_URL}/v1/products/search-img`, body, {
+    headers: authHeaders(),
+    timeout: 20000,
+  });
+
+  return {
+    products: (data.items || []).map(normaliseProduct),
+    total:    data.paginate?.total || 0,
+  };
+}
+
+/**
  * Fetch full details for a single product by its ID.
  *
  * @param {string|number} productId
@@ -146,4 +204,4 @@ function extractPrice(item) {
   return 0;
 }
 
-module.exports = { searchProducts, getProductDetail };
+module.exports = { searchProducts, searchByImage, uploadImage, getProductDetail };

@@ -184,6 +184,32 @@ body {
 
 .hero-search .btn-lg { border-radius: 0 var(--radius) var(--radius) 0; }
 
+/* Search-by-photo camera button (sits between the input and Search) */
+.photo-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: color .2s, border-color .2s;
+}
+.photo-btn:hover { color: var(--brand); border-color: var(--brand); }
+.photo-btn-lg { padding: 0 16px; border-width: 1.5px; border-left: none; border-right: none; }
+.photo-btn-sm { padding: 0 10px; border-radius: var(--radius-sm); }
+.photo-btn-label { display: none; margin-left: 8px; font-size: 15px; font-weight: 500; font-family: inherit; }
+
+.results-meta .meta-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 6px;
+  vertical-align: middle;
+  margin-right: 8px;
+  border: 1px solid var(--border);
+}
+
 .hero-tags {
   display: flex;
   flex-wrap: wrap;
@@ -701,6 +727,8 @@ body {
   .hero-search { flex-direction: column; border-radius: var(--radius); box-shadow: none; gap: 10px; }
   .search-input-lg { border: 1.5px solid var(--border); border-radius: var(--radius); }
   .hero-search .btn-lg { border-radius: var(--radius); width: 100%; justify-content: center; }
+  .photo-btn-lg { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 12px; }
+  .photo-btn-lg .photo-btn-label { display: inline; }
   .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .modal-images { grid-template-columns: 1fr; }
   .modal-actions { flex-direction: column; }

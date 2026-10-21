@@ -30,6 +30,9 @@
           placeholder="Search products..."
           autocomplete="off"
         />
+<button type="button" class="photo-btn photo-btn-sm" data-photo-search title="Search by photo" aria-label="Search by photo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        </button>
         <button type="submit" class="btn btn-primary btn-sm">Search</button>
       </form>
 
@@ -60,11 +63,17 @@
           autocomplete="off"
           autofocus
         />
+<button type="button" class="photo-btn photo-btn-lg" data-photo-search title="Search by photo" aria-label="Search by photo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <span class="photo-btn-label">Search by photo</span>
+        </button>
         <button type="submit" class="btn btn-primary btn-lg" id="searchBtn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
           Search
         </button>
       </form>
+
+      <input type="file" id="photoInput" accept="image/jpeg,image/png,image/webp,image/*" hidden />
 
       <div class="hero-tags">
         <span class="hero-tag-label">Popular:</span>

@@ -17,6 +17,7 @@ let sortMode        = 'default';
 let currentPageSize = 50;
 let filterPriceMin  = null;
 let filterPriceMax  = null;
+let photoPreviewUrl = null;   // object URL of the last photo searched, for the results header
 
 // Saved products — persisted in localStorage
 const SAVED_KEY = 'ifa_saved_products';
@@ -48,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   const q = params.get('q');
   if (q) {
-    document.getElementById('searchInput').value = q;
+    if (!isPhotoQuery(q)) document.getElementById('searchInput').value = q;
     currentPage = parseInt(params.get('page')) || 1;
     runSearch(q, currentPage);
   }
@@ -78,6 +79,17 @@ function bindEvents() {
       showHero();
       window.history.pushState({}, '', '/');
     });
+
+  // Search by photo — camera buttons open the shared file picker
+  const photoInput = document.getElementById('photoInput');
+  document.querySelectorAll('[data-photo-search]').forEach(btn =>
+    btn.addEventListener('click', () => photoInput.click())
+  );
+  photoInput.addEventListener('change', () => {
+    const file = photoInput.files[0];
+    photoInput.value = '';   // allow picking the same photo again
+    if (file) searchByPhoto(file);
+  });
 
   // Quick-search chips
   document.querySelectorAll('.tag-chip').forEach(chip =>
@@ -129,8 +141,9 @@ function bindEvents() {
 function triggerSearch(query, page = 1) {
   currentQuery = query;
   currentPage  = page;
-  document.getElementById('searchInput').value       = query;
-  document.getElementById('headerSearchInput').value  = query;
+  const text = isPhotoQuery(query) ? '' : query;   // don't show "img:123" in the inputs
+  document.getElementById('searchInput').value       = text;
+  document.getElementById('headerSearchInput').value  = text;
   const url = new URL(window.location);
   url.searchParams.set('q', query);
   url.searchParams.set('page', page);
@@ -179,6 +192,53 @@ async function runSearch(query, page) {
 
   } catch (err) {
     showError(err.message);
+  }
+}
+
+// Photo searches use the query "img:<imageId>", so paging, sorting and the
+// URL work exactly like keyword searches.
+function isPhotoQuery(query) {
+  return /^img:\d+$/.test(query);
+}
+
+async function searchByPhoto(file) {
+  showResultsSection();
+  showSkeleton();
+
+  try {
+    const photo = await shrinkPhoto(file);
+    if (photo.size > 10 * 1024 * 1024) throw new Error('That photo is too large (max 10 MB).');
+
+    const resp = await fetch(`${API_BASE}/image-upload`, {
+      method:  'POST',
+      headers: { 'Content-Type': photo.type },
+      body:    photo,
+    });
+    const data = await resp.json().catch(() => ({}));
+    if (!resp.ok || !data.imageId) throw new Error(data.error || `HTTP ${resp.status}`);
+
+    if (photoPreviewUrl) URL.revokeObjectURL(photoPreviewUrl);
+    photoPreviewUrl = URL.createObjectURL(photo);
+    triggerSearch(`img:${data.imageId}`, 1);
+  } catch (err) {
+    showError(err.message);
+  }
+}
+
+// Phone photos can be several MB — scale to max 1200px JPEG before uploading.
+// Falls back to the original file if the browser can't decode it.
+async function shrinkPhoto(file, maxSide = 1200) {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale  = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width  = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.88));
+    return blob || file;
+  } catch {
+    return file;
   }
 }
 
@@ -555,8 +615,10 @@ function updateCurrencyBadge(currency, symbol) {
 }
 
 function updateResultsMeta(query, total) {
-  document.getElementById('resultsMeta').innerHTML =
-    `Results for <strong>${escHtml(query)}</strong> · ${formatNumber(total)} products`;
+  const label = isPhotoQuery(query)
+    ? `${photoPreviewUrl ? `<img class="meta-thumb" src="${photoPreviewUrl}" alt="">` : ''}Products similar to <strong>your photo</strong>`
+    : `Results for <strong>${escHtml(query)}</strong>`;
+  document.getElementById('resultsMeta').innerHTML = `${label} · ${formatNumber(total)} products`;
 }
 
 // -----------------------------------------------------------------------
