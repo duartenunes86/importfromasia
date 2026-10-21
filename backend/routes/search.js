@@ -10,7 +10,7 @@ const express    = require('express');
 const router     = express.Router();
 
 const { searchProducts, getProductDetail } = require('../services/search1688');
-const { translateBatch }                   = require('../services/translator');
+const { translateBatch, translateToChinese } = require('../services/translator');
 const { getCurrencyForIp, convertFromCny, getExchangeRates } = require('../services/currency');
 
 // 15% markup applied by the currency service — used to reverse display-currency
@@ -67,7 +67,8 @@ router.get('/search', async (req, res) => {
     const inRange = p => p.priceCny >= minCny && p.priceCny <= maxCny;
 
     // One API batch of 50 per page; for price-asc the Elim API sorts server-side
-    const result = await searchProducts(query, page, PAGE_SIZE, { sort });
+    const zhQuery = await translateToChinese(query);
+    const result  = await searchProducts(zhQuery, page, PAGE_SIZE, { sort });
     const total  = result.total;
     const slice  = result.products.filter(p => p.priceCny > 0 && inRange(p));
     // Elim sorts by list price but we show the promotion price — re-sort the page

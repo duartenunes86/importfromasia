@@ -1,5 +1,5 @@
 /**
- * Translation Service — Chinese (Simplified) → English
+ * Translation Service — Chinese (Simplified) ⇄ English
  *
  * Uses MyMemory's free public API (no key required for basic use).
  * Falls back gracefully if translation fails, returning the original text.
@@ -43,6 +43,32 @@ async function translateToEnglish(text) {
 }
 
 /**
+ * Translate an English search query to Chinese (Simplified), so Elim searches
+ * the right term — its own translation of e.g. "micropipette" matches incense.
+ * Returns the original query if it already contains Chinese or translation fails.
+ *
+ * @param {string} text
+ * @returns {Promise<string>}
+ */
+async function translateToChinese(text) {
+  if (!text || !text.trim() || !isAlreadyEnglish(text)) return text;
+
+  const cacheKey = `zh:${text.toLowerCase()}`;
+  const cached = cache.get(cacheKey);
+  if (cached !== undefined) return cached;
+
+  try {
+    let result = await translateMyMemory(text, 'en|zh-CN');
+    // Quota warnings etc. come back as English text — keep the original query
+    if (isAlreadyEnglish(result)) result = text;
+    cache.set(cacheKey, result);
+    return result;
+  } catch {
+    return text;
+  }
+}
+
+/**
  * Translate an array of strings in a single batch.
  * Runs translations concurrently with a small concurrency cap.
  *
@@ -66,10 +92,10 @@ async function translateBatch(texts) {
 // Providers
 // ---------------------------------------------------------------------------
 
-async function translateMyMemory(text) {
+async function translateMyMemory(text, langpair = 'zh-CN|en') {
   const params = {
     q: text,
-    langpair: 'zh-CN|en',
+    langpair,
   };
 
   if (process.env.MYMEMORY_EMAIL) {
@@ -100,4 +126,4 @@ function isAlreadyEnglish(text) {
   return cjkCount === 0;
 }
 
-module.exports = { translateToEnglish, translateBatch };
+module.exports = { translateToEnglish, translateToChinese, translateBatch };
