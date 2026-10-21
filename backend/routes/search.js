@@ -70,9 +70,14 @@ router.get('/search', async (req, res) => {
 
     // One API batch of 50 per page; for price-asc the Elim API sorts server-side
     const imageId = query.match(/^img:(\d+)$/)?.[1];
+    const filters = {
+      sort,
+      priceMin: Number.isFinite(minCny) ? minCny : undefined,
+      priceMax: Number.isFinite(maxCny) ? maxCny : undefined,
+    };
     const result  = imageId
-      ? await searchByImage(imageId, page, PAGE_SIZE, { sort })
-      : await searchProducts(await translateToChinese(query), page, PAGE_SIZE, { sort });
+      ? await searchByImage(imageId, page, PAGE_SIZE, filters)
+      : await searchProducts(await translateToChinese(query), page, PAGE_SIZE, filters);
     const total  = result.total;
     const slice  = result.products.filter(p => p.priceCny > 0 && inRange(p));
 

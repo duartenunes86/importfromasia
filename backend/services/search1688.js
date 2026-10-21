@@ -45,6 +45,13 @@ function authHeaders() {
   return { Authorization: `Bearer ${_token}`, 'Content-Type': 'application/json' };
 }
 
+// Price range (CNY) filtered by Elim itself, so every page is full of in-range
+// products — filtering a fetched page of 50 locally left price-sorted pages empty
+function priceFilter({ priceMin, priceMax }) {
+  if (!priceMin && !priceMax) return undefined;
+  return { price_range: { min: Number(priceMin) || 0, max: Number(priceMax) || 9_999_999 } };
+}
+
 // ---------------------------------------------------------------------------
 // Public API
 // ---------------------------------------------------------------------------
@@ -55,7 +62,7 @@ function authHeaders() {
  * @param {string} keyword
  * @param {number} page
  * @param {number} pageSize
- * @param {object} filters   - { priceMin, priceMax, sort }
+ * @param {object} filters   - { priceMin, priceMax (CNY), sort }
  * @returns {Promise<{products: Array, total: number}>}
  */
 async function searchProducts(keyword, page = 1, pageSize = 20, filters = {}) {
@@ -70,15 +77,8 @@ async function searchProducts(keyword, page = 1, pageSize = 20, filters = {}) {
   };
 
   if (SORT_MAP[filters.sort]) body.sort = SORT_MAP[filters.sort];
-
-  if (filters.priceMin || filters.priceMax) {
-    body.filter = {
-      price_range: {
-        min: filters.priceMin ? Number(filters.priceMin) : undefined,
-        max: filters.priceMax ? Number(filters.priceMax) : undefined,
-      },
-    };
-  }
+  const filter = priceFilter(filters);
+  if (filter) body.filter = filter;
 
   const { data } = await axios.post(`${BASE_URL}/v1/products/search`, body, {
     headers: authHeaders(),
@@ -121,7 +121,7 @@ async function uploadImage(buffer, mimeType) {
  * @param {string} imageId   - from uploadImage
  * @param {number} page
  * @param {number} pageSize
- * @param {object} filters   - { sort }
+ * @param {object} filters   - { priceMin, priceMax (CNY), sort }
  * @returns {Promise<{products: Array, total: number}>}
  */
 async function searchByImage(imageId, page = 1, pageSize = 20, filters = {}) {
@@ -137,6 +137,8 @@ async function searchByImage(imageId, page = 1, pageSize = 20, filters = {}) {
   };
 
   if (SORT_MAP[filters.sort]) body.sort = SORT_MAP[filters.sort];
+  const filter = priceFilter(filters);
+  if (filter) body.filter = filter;
 
   const { data } = await axios.post(`${BASE_URL}/v1/products/search-img`, body, {
     headers: authHeaders(),
