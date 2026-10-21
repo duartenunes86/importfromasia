@@ -7,18 +7,14 @@
  */
 
 const express    = require('express');
-const NodeCache  = require('node-cache');
 const router     = express.Router();
 
 const { searchProducts, getProductDetail } = require('../services/search1688');
 const { translateBatch }                   = require('../services/translator');
 const { getCurrencyForIp, convertFromCny, getExchangeRates } = require('../services/currency');
 
-// Cache the lowest-price-sorted pool for 5 minutes (keyed by query)
-const poolCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
-
 // 15% markup applied by the currency service — used to reverse display-currency
-// price filters back into CNY so we can filter the pool.
+// price filters back into CNY so we can filter results.
 const CURRENCY_SPREAD = 0.15;
 
 // ---------------------------------------------------------------------------
@@ -45,36 +41,7 @@ function resolveCurrency(req) {
 // GET /api/search
 // ---------------------------------------------------------------------------
 
-const FETCH_PAGES  = 15;  // batches pulled for the price-sorted pool
-const FETCH_SIZE   = 50;  // items per API call (API hard limit — 100 returns nothing)
-const PAGE_SIZE    = 50;  // items shown per page to the user (one API batch)
-
-/**
- * Build a pool of products for a query: pull FETCH_PAGES pages from the Elim API
- * in parallel, drop items with no usable price, dedupe by id, and sort ascending
- * by CNY price (lowest first). Cached for the poolCache TTL.
- */
-async function buildPool(query) {
-  const pages = await Promise.all(
-    Array.from({ length: FETCH_PAGES }, (_, i) =>
-      searchProducts(query, i + 1, FETCH_SIZE).catch(() => ({ products: [], total: 0 }))
-    )
-  );
-
-  const seen   = new Set();
-  const merged = [];
-  for (const pg of pages) {
-    for (const item of pg.products) {
-      if (item.priceCny > 0 && !seen.has(item.id)) {
-        seen.add(item.id);
-        merged.push(item);
-      }
-    }
-  }
-
-  merged.sort((a, b) => a.priceCny - b.priceCny);
-  return merged;
-}
+const PAGE_SIZE = 50;  // items per page (API hard limit — 100 returns nothing)
 
 router.get('/search', async (req, res) => {
   const query = (req.query.q || '').trim();
@@ -99,28 +66,14 @@ router.get('/search', async (req, res) => {
     }
     const inRange = p => p.priceCny >= minCny && p.priceCny <= maxCny;
 
-    let slice, total;
+    // One API batch of 50 per page; for price-asc the Elim API sorts server-side
+    const result = await searchProducts(query, page, PAGE_SIZE, { sort });
+    const total  = result.total;
+    const slice  = result.products.filter(p => p.priceCny > 0 && inRange(p));
+    // Elim sorts by list price but we show the promotion price — re-sort the page
+    if (sort === 'price-asc') slice.sort((a, b) => a.priceCny - b.priceCny);
 
-    if (sort === 'price-asc') {
-      // ── Lowest price: pool 15 batches of 50, sort ascending, paginate ──
-      const cacheKey = `pool:${query.toLowerCase()}`;
-      let pool = poolCache.get(cacheKey);
-      if (!pool) {
-        pool = await buildPool(query);
-        poolCache.set(cacheKey, pool);
-      }
-      const filtered = pool.filter(inRange);
-      total = filtered.length;
-      const start = (page - 1) * PAGE_SIZE;
-      slice = filtered.slice(start, start + PAGE_SIZE);
-    } else {
-      // ── Relevance (default): one API batch of 50 in the API's own order ──
-      const result = await searchProducts(query, page, PAGE_SIZE);
-      total = result.total;
-      slice = result.products.filter(p => p.priceCny > 0 && inRange(p));
-    }
-
-    // Translate + convert only the visible slice (keeps the pool cheap)
+    // Translate + convert the visible slice
     const titles = await translateBatch(slice.map(p => p.title));
     const enriched = await Promise.all(
       slice.map(async (p, i) => ({

@@ -84,7 +84,7 @@ function bindEvents() {
     chip.addEventListener('click', () => triggerSearch(chip.dataset.query, 1))
   );
 
-  // Sort — relevance (single batch) vs price low→high (pooled + sorted)
+  // Sort — relevance vs price low→high (sorted server-side by the Elim API)
   document.getElementById('sortSelect').addEventListener('change', e => {
     sortMode = e.target.value;
     if (currentQuery) triggerSearch(currentQuery, 1);
