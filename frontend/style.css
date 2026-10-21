@@ -197,7 +197,71 @@ body {
 }
 .photo-btn:hover { color: var(--brand); border-color: var(--brand); }
 .photo-btn-lg { padding: 0 16px; border-width: 1.5px; border-left: none; border-right: none; }
-.photo-btn-sm { padding: 0 10px; border-radius: var(--radius-sm); }
+.photo-btn-sm { padding: 0 12px; border-radius: var(--radius-sm); }
+.photo-btn-sm-label { margin-left: 6px; font-size: 13px; font-weight: 600; font-family: inherit; }
+.photo-btn-sm { gap: 0; color: var(--brand); border-color: var(--brand); background: var(--brand-light); }
+
+/* Prominent "Search by photo" panel under the hero search bar */
+.photo-cta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 600px;
+  margin: -12px auto 28px;
+  padding: 16px 20px;
+  background: var(--white);
+  border: 2px dashed var(--brand);
+  border-radius: var(--radius);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .2s, transform .2s;
+}
+.photo-cta:hover { background: var(--brand-light); transform: translateY(-1px); }
+.photo-cta-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--white);
+}
+.photo-cta-text { display: flex; flex-direction: column; gap: 2px; }
+.photo-cta-text strong { font-size: 17px; color: var(--text-primary); }
+.photo-cta-text span { font-size: 13.5px; color: var(--text-secondary); line-height: 1.4; }
+.photo-cta-mobile { display: none; }
+
+/* Full-page drop target while dragging a file */
+.drop-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(232, 83, 14, .12);
+  backdrop-filter: blur(2px);
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.drop-overlay.active { display: flex; }
+.drop-overlay-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 40px 56px;
+  background: var(--white);
+  color: var(--brand);
+  border: 3px dashed var(--brand);
+  border-radius: var(--radius);
+  font-size: 18px;
+  box-shadow: var(--shadow-lg);
+}
+
 .photo-btn-label { display: none; margin-left: 8px; font-size: 15px; font-weight: 500; font-family: inherit; }
 
 .results-meta .meta-thumb {
@@ -728,7 +792,11 @@ body {
   .search-input-lg { border: 1.5px solid var(--border); border-radius: var(--radius); }
   .hero-search .btn-lg { border-radius: var(--radius); width: 100%; justify-content: center; }
   .photo-btn-lg { border: 1.5px solid var(--border); border-radius: var(--radius); padding: 12px; }
-  .photo-btn-lg .photo-btn-label { display: inline; }
+  .photo-btn-lg { display: none; }   /* the photo panel below does this job on phones */
+  .photo-cta { margin-top: 0; padding: 14px 16px; }
+  .photo-btn-sm-label { display: none; }
+  .photo-cta-desktop { display: none; }
+  .photo-cta-mobile { display: inline; }
   .product-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
   .modal-images { grid-template-columns: 1fr; }
   .modal-actions { flex-direction: column; }

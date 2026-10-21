@@ -91,6 +91,37 @@ function bindEvents() {
     if (file) searchByPhoto(file);
   });
 
+  // Drag & drop a photo anywhere on the page
+  const overlay = document.getElementById('dropOverlay');
+  const hasFile = e => [...(e.dataTransfer?.types || [])].includes('Files');
+  let dragDepth = 0;
+  document.addEventListener('dragenter', e => {
+    if (!hasFile(e)) return;
+    dragDepth++;
+    overlay.classList.add('active');
+  });
+  document.addEventListener('dragleave', e => {
+    if (hasFile(e) && --dragDepth <= 0) { dragDepth = 0; overlay.classList.remove('active'); }
+  });
+  document.addEventListener('dragover', e => { if (hasFile(e)) e.preventDefault(); });
+  document.addEventListener('drop', e => {
+    if (!hasFile(e)) return;
+    e.preventDefault();
+    dragDepth = 0;
+    overlay.classList.remove('active');
+    const file = [...e.dataTransfer.files].find(f => f.type.startsWith('image/'));
+    if (file) searchByPhoto(file);
+    else showError('Please drop an image file (JPEG, PNG or WebP).');
+  });
+
+  // Paste an image (e.g. a screenshot) to search by it
+  document.addEventListener('paste', e => {
+    const item = [...(e.clipboardData?.items || [])].find(i => i.type.startsWith('image/'));
+    if (!item) return;   // normal text paste into the search box
+    e.preventDefault();
+    searchByPhoto(item.getAsFile());
+  });
+
   // Quick-search chips
   document.querySelectorAll('.tag-chip').forEach(chip =>
     chip.addEventListener('click', () => triggerSearch(chip.dataset.query, 1))
