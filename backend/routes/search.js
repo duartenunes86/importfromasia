@@ -71,8 +71,6 @@ router.get('/search', async (req, res) => {
     const result  = await searchProducts(zhQuery, page, PAGE_SIZE, { sort });
     const total  = result.total;
     const slice  = result.products.filter(p => p.priceCny > 0 && inRange(p));
-    // Elim sorts by list price but we show the promotion price — re-sort the page
-    if (sort === 'price-asc') slice.sort((a, b) => a.priceCny - b.priceCny);
 
     // Translate + convert the visible slice
     const titles = await translateBatch(slice.map(p => p.title));

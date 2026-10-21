@@ -137,8 +137,10 @@ function normaliseProduct(item) {
   };
 }
 
+// Use the list price, not promotion_price: promotions are often first-order
+// deals, and search/detail disagree on them (search card £2 vs product page £6).
 function extractPrice(item) {
-  const raw = item.promotion_price ?? item.price ?? item.retail_price;
+  const raw = Number(item.price) > 0 ? item.price : (item.promotion_price ?? item.retail_price);
   if (typeof raw === 'number') return raw;
   if (typeof raw === 'string') return parseFloat(raw) || 0;
   return 0;
