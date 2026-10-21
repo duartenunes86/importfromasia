@@ -43,11 +43,19 @@ async function translateToEnglish(text) {
 }
 
 // Queries where a literal translation finds the wrong products on 1688
-// (e.g. "rosary beads" → 念珠 returns Buddhist bracelets). Keys are lowercase.
+// (e.g. "rosary beads" → 念珠 returns Buddhist bracelets) or nothing at all —
+// 1688 blocks some religious terms (天主教, 圣母玛利亚, 宗教饰品 return 0 results).
+// Keys are lowercase.
 const QUERY_OVERRIDES = {
-  'rosary':       '十字架念珠项链',
-  'rosaries':     '十字架念珠项链',
-  'rosary beads': '十字架念珠项链',
+  'rosary':          '十字架念珠项链',
+  'rosaries':        '十字架念珠项链',
+  'rosary beads':    '十字架念珠项链',
+  'catholic rosary': '十字架念珠项链',
+  'catholic':        '十字架',
+  'religious':       '十字架',
+  'virgin mary':     '圣母像',
+  'our lady':        '圣母像',
+  'madonna':         '圣母像',
 };
 
 /**
