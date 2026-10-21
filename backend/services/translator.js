@@ -58,6 +58,17 @@ const QUERY_OVERRIDES = {
   'madonna':         '圣母像',
 };
 
+// Words 1688 blocks inside a query (any query containing them returns 0 results),
+// swapped for 十字架 (cross), which returns religious items. Longest first.
+const BLOCKED_TERMS = /圣母玛利亚|处女玛丽|纯真玛丽|玛利亚|圣母|天主教|宗教/g;
+
+function unblockQuery(zh) {
+  return zh
+    .replace(/^[a-z]+\.\s*/i, '')            // MyMemory part-of-speech prefix, e.g. "adj.宗教"
+    .replace(BLOCKED_TERMS, '十字架')
+    .replace(/(十字架)+/g, '十字架');         // collapse repeats from adjacent swaps
+}
+
 /**
  * Translate an English search query to Chinese (Simplified), so Elim searches
  * the right term — its own translation of e.g. "micropipette" matches incense.
@@ -77,7 +88,7 @@ async function translateToChinese(text) {
   if (cached !== undefined) return cached;
 
   try {
-    let result = await translateMyMemory(text, 'en|zh-CN');
+    let result = unblockQuery(await translateMyMemory(text, 'en|zh-CN'));
     // Quota warnings etc. come back as English text — keep the original query
     if (isAlreadyEnglish(result)) result = text;
     cache.set(cacheKey, result);
