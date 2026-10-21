@@ -42,6 +42,14 @@ async function translateToEnglish(text) {
   }
 }
 
+// Queries where a literal translation finds the wrong products on 1688
+// (e.g. "rosary beads" → 念珠 returns Buddhist bracelets). Keys are lowercase.
+const QUERY_OVERRIDES = {
+  'rosary':       '十字架念珠项链',
+  'rosaries':     '十字架念珠项链',
+  'rosary beads': '十字架念珠项链',
+};
+
 /**
  * Translate an English search query to Chinese (Simplified), so Elim searches
  * the right term — its own translation of e.g. "micropipette" matches incense.
@@ -52,6 +60,9 @@ async function translateToEnglish(text) {
  */
 async function translateToChinese(text) {
   if (!text || !text.trim() || !isAlreadyEnglish(text)) return text;
+
+  const override = QUERY_OVERRIDES[text.trim().toLowerCase().replace(/\s+/g, ' ')];
+  if (override) return override;
 
   const cacheKey = `zh:${text.toLowerCase()}`;
   const cached = cache.get(cacheKey);
