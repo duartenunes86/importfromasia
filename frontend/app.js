@@ -53,7 +53,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     currentPage = parseInt(params.get('page')) || 1;
     runSearch(q, currentPage);
   }
+
+  // Product link (/offer/<id>.html, same shape as detail.1688.com) → open that product
+  const offerId = offerIdFromPath();
+  if (offerId) openProductModal({ id: offerId, title: '' }, { pushUrl: false });
+
+  // Browser back/forward: open or close the product modal to match the URL
+  window.addEventListener('popstate', () => {
+    const id = offerIdFromPath();
+    const modal = document.getElementById('productModal');
+    if (id && id !== modal.dataset.productId) openProductModal({ id, title: '' }, { pushUrl: false });
+    else if (!id) closeModal({ restoreUrl: false });
+  });
 });
+
+function offerIdFromPath() {
+  const m = window.location.pathname.match(/^\/offer\/(\d+)\.html$/);
+  return m ? m[1] : null;
+}
+
+function productLink(id) {
+  return `${window.location.origin}/offer/${encodeURIComponent(id)}.html`;
+}
 
 // -----------------------------------------------------------------------
 // Events
@@ -375,7 +396,9 @@ function renderPagination(total, cur) {
 // -----------------------------------------------------------------------
 // Product modal
 // -----------------------------------------------------------------------
-function openProductModal(product) {
+let urlBeforeModal = null;   // where to return when the modal closes
+
+function openProductModal(product, { pushUrl = true } = {}) {
   const saved   = getSaved();
   const isSaved = saved.some(s => s.id === product.id);
   const modal   = document.getElementById('productModal');
@@ -386,6 +409,11 @@ function openProductModal(product) {
   modal.style.display = 'flex';
   document.body.style.overflow = 'hidden';
 
+  if (pushUrl) {
+    if (!offerIdFromPath()) urlBeforeModal = window.location.href;
+    window.history.pushState({}, '', `/offer/${encodeURIComponent(product.id)}.html`);
+  }
+
   // Render immediately with card data, then load detail
   renderModal(content, product, isSaved, null);
 
@@ -395,7 +423,9 @@ function openProductModal(product) {
     .then(r => r.json())
     .then(detail => {
       if (modal.dataset.productId !== product.id) return; // modal was closed/changed
-      renderModal(content, { ...product, ...detail }, isSaved, detail);
+      const merged = { ...product, ...detail, id: product.id };
+      modal._product = merged;
+      renderModal(content, merged, isSaved, detail);
     })
     .catch(() => {}); // silently fail — card data already showing
 }
@@ -449,6 +479,11 @@ function renderModal(content, product, isSaved, detail) {
   content.innerHTML = `
     ${galleryHtml}
     <h2 class="modal-title">${escHtml(product.title)}</h2>
+    <div class="modal-link">
+      <span class="modal-link-id">Product #${escHtml(product.id)}</span>
+      <a href="${escHtml(productLink(product.id))}" class="modal-link-url">${escHtml(productLink(product.id))}</a>
+      <button class="modal-link-copy" onclick="copyProductLink(this, '${escHtml(product.id)}')">Copy link</button>
+    </div>
     ${priceBlock}
     ${tierHtml}
     <div class="modal-specs">
@@ -472,9 +507,23 @@ function selectGalleryImg(el) {
   el.classList.add('active');
 }
 
-function closeModal() {
-  document.getElementById('productModal').style.display = 'none';
+function closeModal({ restoreUrl = true } = {}) {
+  const modal = document.getElementById('productModal');
+  const wasOpen = modal.style.display === 'flex';
+  modal.style.display = 'none';
+  modal.dataset.productId = '';
   document.body.style.overflow = '';
+  if (restoreUrl && wasOpen && offerIdFromPath()) {
+    window.history.pushState({}, '', urlBeforeModal || '/');
+  }
+  urlBeforeModal = null;
+}
+
+function copyProductLink(btn, id) {
+  navigator.clipboard?.writeText(productLink(id)).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => { btn.textContent = 'Copy link'; }, 1500);
+  });
 }
 
 // -----------------------------------------------------------------------

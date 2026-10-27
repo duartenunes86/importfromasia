@@ -801,3 +801,10 @@ body {
   .modal-images { grid-template-columns: 1fr; }
   .modal-actions { flex-direction: column; }
 }
+
+/* Product link (/offer/<id>.html) */
+.modal-link { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: -4px 0 12px; font-size: 13px; }
+.modal-link-id { font-weight: 600; color: var(--text-secondary); }
+.modal-link-url { color: var(--accent); word-break: break-all; }
+.modal-link-copy { font-size: 12px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 6px; background: transparent; cursor: pointer; color: var(--text-secondary); }
+.modal-link-copy:hover { background: var(--bg); }
