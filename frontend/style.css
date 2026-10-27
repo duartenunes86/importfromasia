@@ -808,3 +808,28 @@ body {
 .modal-link-url { color: var(--accent); word-break: break-all; }
 .modal-link-copy { font-size: 12px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 6px; background: transparent; cursor: pointer; color: var(--text-secondary); }
 .modal-link-copy:hover { background: var(--bg); }
+
+/* WhatsApp / small UK orders */
+.btn-whatsapp { background: #25d366; color: #fff; text-decoration: none; }
+.btn-whatsapp:hover { background: #1ebe5b; }
+.uk-import-banner {
+  display: flex; align-items: center; gap: 14px; text-align: left;
+  margin: -12px auto 28px; padding: 14px 18px;
+  background: #fff; border: 1.5px solid #25d366; border-radius: var(--radius);
+  color: var(--text-primary); text-decoration: none;
+  box-shadow: 0 2px 10px rgba(37, 211, 102, .12);
+}
+.uk-import-banner:hover { background: #f3fdf6; }
+.uk-import-flag { font-size: 28px; flex-shrink: 0; }
+.uk-import-text { display: flex; flex-direction: column; gap: 3px; font-size: 14px; color: var(--text-secondary); }
+.uk-import-text strong { font-size: 16px; color: var(--text-primary); }
+.uk-import-cta {
+  margin-left: auto; flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px;
+  background: #25d366; color: #fff; font-weight: 600; padding: 8px 14px; border-radius: 999px; font-size: 14px;
+}
+.modal-uk-note { font-size: 14px; background: #f3fdf6; border: 1px solid #b7f0cc; border-radius: 8px; padding: 10px 12px; margin: 12px 0; }
+@media (max-width: 640px) {
+  .whatsapp-label { display: none; }
+  .uk-import-banner { flex-wrap: wrap; }
+  .uk-import-cta { margin-left: 0; }
+}

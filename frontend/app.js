@@ -493,11 +493,16 @@ function renderModal(content, product, isSaved, detail) {
       ${product.sales    ? `<span class="modal-spec-label">Sold</span><span class="modal-spec-value">${formatNumber(product.sales)} units</span>` : ''}
     </div>
     ${attrsHtml}
+    <p class="modal-uk-note">🇬🇧 We can import very small orders of mixed products to the UK — ask for more info on WhatsApp <b>07561 622086</b>.</p>
     ${descHtml}
     <div class="modal-actions">
       <button class="btn btn-outline btn-lg" id="modalSaveBtn" onclick="toggleSaveFromModal('${escHtml(product.id)}')">
         ${isSaved ? '✓ Saved' : '+ Save'}
       </button>
+      <a class="btn btn-whatsapp btn-lg" target="_blank" rel="noopener"
+         href="https://wa.me/447561622086?text=${encodeURIComponent(`Hi, I'm interested in importing this product to the UK: ${productLink(product.id)}`)}">
+        Ask on WhatsApp
+      </a>
       <button class="btn btn-ghost btn-lg" onclick="closeModal()">Close</button>
     </div>`;
 }
